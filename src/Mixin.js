@@ -56,6 +56,7 @@ module.exports = {
   componentWillMount: function () {
     var configure = function () {
       this.setValidations(this.props.validations, this.props.required);
+      console.log('mixin componentWillMount required: ', this.props.required);
 
       // Pass a function instead?
       this.context.formsy.attachToForm(this);

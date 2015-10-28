@@ -26,7 +26,8 @@ Formsy.Form = React.createClass({
     return {
       isValid: true,
       isSubmitting: false,
-      canChange: false
+      canChange: false,
+      trySubmit: false
     };
   },
   getDefaultProps: function () {
@@ -104,7 +105,7 @@ Formsy.Form = React.createClass({
   submit: function (event) {
 
     event && event.preventDefault();
-
+    this.state.trySubmit = true;
     // Trigger form as not pristine.
     // If any inputs have not been touched yet this will make them dirty
     // so validation becomes visible (if based on isPristine)
@@ -113,7 +114,8 @@ Formsy.Form = React.createClass({
     var model = this.mapModel();
     this.props.onSubmit(model, this.resetModel, this.updateInputsWithError);
     this.state.isValid ? this.props.onValidSubmit(model, this.resetModel, this.updateInputsWithError) : this.props.onInvalidSubmit(model, this.resetModel, this.updateInputsWithError);
-
+    this.validateForm();
+    this.state.trySubmit = false;
   },
 
   mapModel: function () {
@@ -128,7 +130,7 @@ Formsy.Form = React.createClass({
           var currentKey = keyArray.shift();
           base = (base[currentKey] = keyArray.length ? base[currentKey] || {} : this.model[key]);
         }
-
+        console.log('mappedModel ', mappedModel);
         return mappedModel;
 
       }.bind(this), {}));
@@ -248,7 +250,7 @@ Formsy.Form = React.createClass({
       _isRequired: validation.isRequired,
       _validationError: validation.error,
       _externalError: null
-    }, this.validateForm);
+    }); // this.validateForm
 
   },
 
@@ -263,6 +265,12 @@ Formsy.Form = React.createClass({
     var validationResults = this.runRules(value, currentValues, component._validations);
     var requiredResults = this.runRules(value, currentValues, component._requiredValidations);
 
+    console.log('isRequired? ', component.isRequired());
+    console.log('hasValue? ', component.hasValue());
+    console.log('getValue ', component.getValue());
+    console.log('validationResults ', validationResults);
+    console.log('****************************');
+    console.log('trySubmit ', this.state.trySubmit);
     // the component defines an explicit validate function
     if (typeof component.validate === "function") {
       validationResults.failed = component.validate() ? [] : ['failed'];
@@ -275,6 +283,10 @@ Formsy.Form = React.createClass({
       isRequired: isRequired,
       isValid: isRequired ? false : isValid,
       error: (function () {
+
+        if (this.state.trySubmit && component.isRequired() && (component.getValue() === undefined || component.getValue() === '')) {
+          return ['This field is required!'];
+        }
 
         if (isValid && !isRequired) {
           return [];
@@ -290,6 +302,7 @@ Formsy.Form = React.createClass({
 
         if (isRequired) {
           var error = validationErrors[requiredResults.success[0]];
+          console.log('isRequired error ', requiredResults);
           return error ? [error] : null;
         }
 
